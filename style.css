@@ -1,0 +1,582 @@
+:root {
+    --bg-color: #121212;
+    --key-bg: rgba(255, 255, 255, 0.05);
+    --key-border: rgba(255, 255, 255, 0.1);
+    --key-text: #ffffff;
+    --key-active-bg: rgba(0, 243, 255, 0.2);
+    --key-active-border: #00f3ff;
+    --key-active-shadow: 0 0 15px #00f3ff;
+    --case-bg: #1a1a1a;
+    --case-border: #333;
+    --neon-accent: #00f3ff;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--key-text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    /* 主题切换过渡动画 */
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.keyboard-container {
+    background: var(--case-bg);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid var(--case-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.02);
+    position: relative;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    /* 主题过渡 */
+    transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.keyboard-container::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-accent), transparent);
+    box-shadow: 0 0 20px var(--neon-accent);
+    opacity: 0.5;
+}
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.key {
+    width: 50px;
+    height: 50px;
+    background: var(--key-bg);
+    border: 1px solid var(--key-border);
+    border-radius: 6px;
+    color: var(--key-text);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    /* 按键动画 + 主题过渡 */
+    transition: transform 0.1s ease, box-shadow 0.1s ease,
+        background 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+    user-select: none;
+    position: relative;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+    text-transform: uppercase;
+}
+
+.key:active,
+.key.active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3), var(--key-active-shadow);
+    border-color: var(--key-active-border);
+    background: var(--key-active-bg);
+    color: var(--neon-accent);
+}
+
+/* Special Key Sizes */
+.key.backspace {
+    width: 100px;
+}
+
+.key.tab {
+    width: 70px;
+    align-items: flex-start;
+    padding-left: 8px;
+    font-size: 12px;
+}
+
+.key.caps {
+    width: 80px;
+    align-items: flex-start;
+    padding-left: 8px;
+    font-size: 12px;
+}
+
+.key.enter {
+    width: 100px;
+    align-items: flex-end;
+    padding-right: 8px;
+    font-size: 12px;
+}
+
+.key.shift-left {
+    width: 110px;
+    align-items: flex-start;
+    padding-left: 8px;
+    font-size: 12px;
+}
+
+.key.shift-right {
+    width: 110px;
+    align-items: flex-end;
+    padding-right: 8px;
+    font-size: 12px;
+}
+
+.key.space {
+    width: 330px;
+}
+
+.key.ctrl,
+.key.win,
+.key.alt,
+.key.menu,
+.key.fn {
+    width: 60px;
+    font-size: 11px;
+}
+
+/* Status Lights */
+.status-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding-right: 15px;
+}
+
+.status-light {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #333;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.status-light::after {
+    content: attr(data-label);
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    color: #666;
+    font-weight: bold;
+}
+
+.status-light.on {
+    background: var(--neon-accent);
+    box-shadow: 0 0 5px var(--neon-accent);
+}
+
+.status-light[data-label="CN"].on {
+    background: #ff0055;
+    /* Different color for CN mode */
+    box-shadow: 0 0 5px #ff0055;
+    color: #ff0055;
+}
+
+/* Candidate Box */
+.candidate-box {
+    position: absolute;
+    top: 130px;
+    width: auto;
+    max-width: 90%;
+    min-width: 400px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 8px 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    display: flex;
+    flex-direction: row;
+    /* Horizontal */
+    align-items: center;
+    gap: 15px;
+    color: #e0e0e0;
+    font-size: 14px;
+    font-family: 'Microsoft YaHei', sans-serif;
+}
+
+.pinyin-text {
+    color: var(--neon-accent);
+    font-weight: bold;
+    border-right: 1px solid #555;
+    padding-right: 10px;
+    margin-right: 5px;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.candidates-list {
+    display: flex;
+    gap: 15px;
+    color: #fff;
+    font-size: 1rem;
+    align-items: center;
+    flex: 1;
+    overflow: hidden;
+}
+
+.candidate-item {
+    padding: 2px 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.candidate-item.active {
+    background: #444;
+    color: #fff;
+}
+
+.page-nav {
+    cursor: pointer;
+    padding: 0 5px;
+    color: #888;
+    font-weight: bold;
+    user-select: none;
+}
+
+.page-nav:hover {
+    color: #fff;
+}
+
+.page-nav.disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.page-nav.disabled:hover {
+    color: #888;
+}
+
+/* Texture/Noise overlay for cleanliness */
+.noise {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    z-index: -1;
+}
+
+/* Typing output display (optional) */
+.output-display {
+    position: absolute;
+    top: 50px;
+    width: 80%;
+    max-width: 800px;
+    text-align: left;
+    /* Better for typing */
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    min-height: 60px;
+    max-height: 150px;
+    overflow-y: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    font-family: 'Roboto Mono', monospace;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+/* 全选状态 */
+.output-display.selected {
+    background: rgba(0, 150, 255, 0.3);
+    border-color: var(--neon-accent);
+}
+
+/* 设置按钮容器 */
+.settings-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.settings-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--key-border);
+    background: var(--key-bg);
+    color: var(--key-text);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-btn:hover {
+    background: var(--key-active-bg);
+    border-color: var(--neon-accent);
+    box-shadow: var(--key-active-shadow);
+}
+
+.settings-btn.off {
+    opacity: 0.5;
+}
+
+.settings-btn.off::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 24px;
+    background: #ff4444;
+    transform: rotate(45deg);
+    border-radius: 2px;
+}
+
+/* ========== 亮色主题 ========== */
+body.light-theme {
+    --bg-color: #f0f2f5;
+    --key-bg: rgba(255, 255, 255, 0.9);
+    --key-border: rgba(0, 0, 0, 0.1);
+    --key-text: #333;
+    --key-active-bg: rgba(0, 150, 200, 0.15);
+    --key-active-border: #0096c8;
+    --key-active-shadow: 0 0 10px rgba(0, 150, 200, 0.3);
+    --case-bg: #e8eaed;
+    --case-border: #ccc;
+    --neon-accent: #0096c8;
+}
+
+body.light-theme .output-display {
+    color: #333;
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .candidate-box {
+    background: #fff;
+    border-color: #ddd;
+    color: #333;
+}
+
+body.light-theme .candidates-list {
+    color: #333;
+}
+
+body.light-theme .candidate-item.active {
+    background: #e0f0ff;
+}
+
+body.light-theme .page-nav {
+    color: #666;
+}
+
+body.light-theme .status-light::after {
+    color: #999;
+}
+
+/* ========== 响应式布局 ========== */
+@media (max-width: 900px) {
+    .keyboard-container {
+        padding: 10px;
+        transform: scale(0.85);
+        transform-origin: center center;
+    }
+
+    .output-display {
+        font-size: 1.5rem;
+        width: 90%;
+    }
+}
+
+@media (max-width: 600px) {
+    .keyboard-container {
+        transform: scale(0.65);
+    }
+
+    .key {
+        width: 40px;
+        height: 40px;
+        font-size: 12px;
+    }
+
+    .key.space {
+        width: 250px;
+    }
+
+    .key.backspace,
+    .key.enter {
+        width: 80px;
+    }
+
+    .key.tab,
+    .key.caps {
+        width: 60px;
+    }
+
+    .key.shift-left,
+    .key.shift-right {
+        width: 90px;
+    }
+
+    .output-display {
+        font-size: 1.2rem;
+        top: 30px;
+    }
+
+    .candidate-box {
+        min-width: 280px;
+        font-size: 12px;
+        top: 100px;
+    }
+}
+
+/* ========== 按键波纹效果 ========== */
+.key {
+    overflow: hidden;
+    position: relative;
+}
+
+.key .ripple {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: radial-gradient(circle, var(--neon-accent) 0%, transparent 70%);
+    opacity: 0.6;
+    animation: ripple-effect 0.6s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes ripple-effect {
+    0% {
+        transform: scale(0);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* ========== 复制反馈 ========== */
+.output-display.copied {
+    animation: copy-flash 0.3s ease;
+}
+
+@keyframes copy-flash {
+
+    0%,
+    100% {
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    50% {
+        background: rgba(0, 200, 100, 0.4);
+    }
+}
+
+/* ========== RGB 流光灯效 ========== */
+.keyboard-container::before {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+            #ff0000, #ff8000, #ffff00, #00ff00,
+            #00ffff, #0080ff, #8000ff, #ff0080, #ff0000);
+    background-size: 200% 100%;
+    animation: rgb-flow 3s linear infinite;
+    border-radius: 0 0 15px 15px;
+    opacity: 0.8;
+}
+
+@keyframes rgb-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    100% {
+        background-position: 200% 50%;
+    }
+}
+
+/* ========== 樱花粉主题 ========== */
+body.sakura-theme {
+    --bg-color: #1a1520;
+    --key-bg: rgba(255, 182, 193, 0.1);
+    --key-border: rgba(255, 182, 193, 0.2);
+    --key-text: #ffd1dc;
+    --key-active-bg: rgba(255, 105, 180, 0.25);
+    --key-active-border: #ff69b4;
+    --key-active-shadow: 0 0 15px #ff69b4;
+    --case-bg: #2a1f2f;
+    --case-border: #4a3545;
+    --neon-accent: #ff69b4;
+}
+
+body.sakura-theme .keyboard-container::before {
+    background: linear-gradient(90deg,
+            #ff69b4, #ff85c1, #ffa0cd, #ff85c1, #ff69b4);
+    background-size: 200% 100%;
+}
+
+/* ========== 森林绿主题 ========== */
+body.forest-theme {
+    --bg-color: #0a1510;
+    --key-bg: rgba(34, 139, 34, 0.1);
+    --key-border: rgba(34, 139, 34, 0.2);
+    --key-text: #90ee90;
+    --key-active-bg: rgba(0, 255, 127, 0.2);
+    --key-active-border: #00ff7f;
+    --key-active-shadow: 0 0 15px #00ff7f;
+    --case-bg: #0f2015;
+    --case-border: #1f4025;
+    --neon-accent: #00ff7f;
+}
+
+body.forest-theme .keyboard-container::before {
+    background: linear-gradient(90deg,
+            #00ff7f, #32cd32, #228b22, #32cd32, #00ff7f);
+    background-size: 200% 100%;
+}
+
+/* ========== 海洋蓝主题 ========== */
+body.ocean-theme {
+    --bg-color: #0a1520;
+    --key-bg: rgba(0, 191, 255, 0.1);
+    --key-border: rgba(0, 191, 255, 0.2);
+    --key-text: #87ceeb;
+    --key-active-bg: rgba(0, 191, 255, 0.25);
+    --key-active-border: #00bfff;
+    --key-active-shadow: 0 0 15px #00bfff;
+    --case-bg: #0f1a25;
+    --case-border: #1a3045;
+    --neon-accent: #00bfff;
+}
+
+body.ocean-theme .keyboard-container::before {
+    background: linear-gradient(90deg,
+            #00bfff, #1e90ff, #4169e1, #1e90ff, #00bfff);
+    background-size: 200% 100%;
+}

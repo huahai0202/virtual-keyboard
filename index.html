@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Keyboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- 拼音-汉字字典数据 -->
+    <script>
+        // 加载拼音字典（单字 + 词组）
+        window.pinyinHanziDict = null;
+        window.pinyinPhraseDict = null;
+
+        // 并行加载两个字典
+        Promise.all([
+            fetch('no-tone-pinyin-hanzi-table.json').then(res => res.json()),
+            fetch('pinyin-phrases.json').then(res => res.json())
+        ]).then(([charDict, phraseDict]) => {
+            window.pinyinHanziDict = charDict;
+            window.pinyinPhraseDict = phraseDict;
+            console.log('字典加载完成:', Object.keys(charDict).length, '个拼音,', Object.keys(phraseDict).length, '个词组');
+        }).catch(err => {
+            console.error('字典加载失败:', err);
+        });
+    </script>
+</head>
+
+<body>
+    <!-- 设置按钮 -->
+    <div class="settings-container">
+        <button id="sound-toggle" class="settings-btn" title="音效开关">🔊</button>
+        <button id="theme-toggle" class="settings-btn" title="切换主题">☀️</button>
+    </div>
+
+    <div class="output-display">Type something...</div>
+
+    <!-- Pinyin Candidate Box -->
+    <div class="candidate-box" style="display: none;">
+        <div class="pinyin-text"></div>
+        <div class="candidates-list"></div>
+    </div>
+
+    <div class="keyboard-container">
+        <div class="status-bar">
+            <div class="status-light" data-label="NUM"></div>
+            <div class="status-light" data-label="CAPS"></div>
+            <div class="status-light" data-label="CN"></div>
+            <div class="status-light" data-label="SCRL"></div>
+        </div>
+
+        <div class="keyboard-row">
+            <div class="key" data-code="Backquote" data-key="`">`</div>
+            <div class="key" data-code="Digit1" data-key="1">1</div>
+            <div class="key" data-code="Digit2" data-key="2">2</div>
+            <div class="key" data-code="Digit3" data-key="3">3</div>
+            <div class="key" data-code="Digit4" data-key="4">4</div>
+            <div class="key" data-code="Digit5" data-key="5">5</div>
+            <div class="key" data-code="Digit6" data-key="6">6</div>
+            <div class="key" data-code="Digit7" data-key="7">7</div>
+            <div class="key" data-code="Digit8" data-key="8">8</div>
+            <div class="key" data-code="Digit9" data-key="9">9</div>
+            <div class="key" data-code="Digit0" data-key="0">0</div>
+            <div class="key" data-code="Minus" data-key="-">-</div>
+            <div class="key" data-code="Equal" data-key="=">=</div>
+            <div class="key backspace" data-code="Backspace" data-key="Backspace">Backspace</div>
+        </div>
+
+        <div class="keyboard-row">
+            <div class="key tab" data-code="Tab" data-key="Tab">Tab</div>
+            <div class="key" data-code="KeyQ" data-key="q">Q</div>
+            <div class="key" data-code="KeyW" data-key="w">W</div>
+            <div class="key" data-code="KeyE" data-key="e">E</div>
+            <div class="key" data-code="KeyR" data-key="r">R</div>
+            <div class="key" data-code="KeyT" data-key="t">T</div>
+            <div class="key" data-code="KeyY" data-key="y">Y</div>
+            <div class="key" data-code="KeyU" data-key="u">U</div>
+            <div class="key" data-code="KeyI" data-key="i">I</div>
+            <div class="key" data-code="KeyO" data-key="o">O</div>
+            <div class="key" data-code="KeyP" data-key="p">P</div>
+            <div class="key" data-code="BracketLeft" data-key="[">[</div>
+            <div class="key" data-code="BracketRight" data-key="]">]</div>
+            <div class="key" data-code="Backslash" data-key="\">\|</div>
+        </div>
+
+        <div class="keyboard-row">
+            <div class="key caps" data-code="CapsLock" data-key="CapsLock">Caps</div>
+            <div class="key" data-code="KeyA" data-key="a">A</div>
+            <div class="key" data-code="KeyS" data-key="s">S</div>
+            <div class="key" data-code="KeyD" data-key="d">D</div>
+            <div class="key" data-code="KeyF" data-key="f">F</div>
+            <div class="key" data-code="KeyG" data-key="g">G</div>
+            <div class="key" data-code="KeyH" data-key="h">H</div>
+            <div class="key" data-code="KeyJ" data-key="j">J</div>
+            <div class="key" data-code="KeyK" data-key="k">K</div>
+            <div class="key" data-code="KeyL" data-key="l">L</div>
+            <div class="key" data-code="Semicolon" data-key=";">;</div>
+            <div class="key" data-code="Quote" data-key="'">'</div>
+            <div class="key enter" data-code="Enter" data-key="Enter">Enter</div>
+        </div>
+
+        <div class="keyboard-row">
+            <div class="key shift-left" data-code="ShiftLeft" data-key="Shift">Shift</div>
+            <div class="key" data-code="KeyZ" data-key="z">Z</div>
+            <div class="key" data-code="KeyX" data-key="x">X</div>
+            <div class="key" data-code="KeyC" data-key="c">C</div>
+            <div class="key" data-code="KeyV" data-key="v">V</div>
+            <div class="key" data-code="KeyB" data-key="b">B</div>
+            <div class="key" data-code="KeyN" data-key="n">N</div>
+            <div class="key" data-code="KeyM" data-key="m">M</div>
+            <div class="key" data-code="Comma" data-key=",">,</div>
+            <div class="key" data-code="Period" data-key=".">.</div>
+            <div class="key" data-code="Slash" data-key="/">/</div>
+            <div class="key shift-right" data-code="ShiftRight" data-key="Shift">Shift</div>
+        </div>
+
+        <div class="keyboard-row">
+            <div class="key ctrl" data-code="ControlLeft" data-key="Ctrl">Ctrl</div>
+            <div class="key win" data-code="MetaLeft" data-key="Win">Win</div>
+            <div class="key alt" data-code="AltLeft" data-key="Alt">Alt</div>
+            <div class="key space" data-code="Space" data-key="Space"></div>
+            <div class="key alt" data-code="AltRight" data-key="Alt">Alt</div>
+            <div class="key fn" data-code="ContextMenu" data-key="Menu">Fn</div>
+            <div class="key ctrl" data-code="ControlRight" data-key="Ctrl">Ctrl</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
