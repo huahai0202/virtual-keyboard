@@ -3,7 +3,6 @@
 一个赛博朋克风格的虚拟键盘，支持中英文拼音输入、400+词组智能匹配和机械键盘音效模拟。
 
 ![Cyber Keyboard](https://img.shields.io/badge/Style-Cyberpunk-00f3ff)
-![Chinese Input](https://img.shields.io/badge/Input-中文拼音-ff0055)
 ![Phrases](https://img.shields.io/badge/词组库-400+-00ff88)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
