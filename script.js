@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
         lastCandidates: [],
         candidatePageSize: 8,
         soundEnabled: true,
-        isAllSelected: false
+        isAllSelected: false,
+        candidateCache: new Map()
     };
 
     // ========== 中文标点映射 ==========
@@ -131,6 +132,29 @@ document.addEventListener('DOMContentLoaded', () => {
             this.updateCandidateBox();
         },
 
+        getPhraseCandidates(buffer, phraseDict) {
+            if (!phraseDict || !window.pinyinMatch || typeof window.pinyinMatch.getPinyinCandidates !== 'function') {
+                return [];
+            }
+            return window.pinyinMatch.getPinyinCandidates(buffer, phraseDict);
+        },
+
+        getCharCandidates(buffer, charDict) {
+            if (!charDict || !window.pinyinMatch || typeof window.pinyinMatch.getPinyinCandidates !== 'function') {
+                return [];
+            }
+            return window.pinyinMatch.getPinyinCandidates(buffer, charDict);
+        },
+
+        pushUnique(list, seen, value, limit) {
+            if (!value || seen.has(value)) return;
+            seen.add(value);
+            list.push(value);
+            if (list.length > limit) {
+                list.length = limit;
+            }
+        },
+
         addChar(char) {
             state.pinyinBuffer += char.toLowerCase();
             state.candidatePage = 0;
@@ -174,55 +198,48 @@ document.addEventListener('DOMContentLoaded', () => {
             let matches = [];
             const charDict = this.getDict();
             const phraseDict = window.pinyinPhraseDict;
+            const cacheKey = `${state.pinyinBuffer}|${state.isChineseMode ? 'cn' : 'en'}`;
 
-            if (!charDict) {
+            if (state.candidateCache.has(cacheKey)) {
+                matches = state.candidateCache.get(cacheKey);
+            } else if (!charDict) {
                 matches = ['字典加载中...'];
             } else {
-                // 1. 词组精确匹配（最高优先级）
-                if (phraseDict && phraseDict[state.pinyinBuffer]) {
-                    matches.push(phraseDict[state.pinyinBuffer]);
-                }
+                const seen = new Set();
 
-                // 2. 词组前缀匹配
-                if (phraseDict && matches.length < 10) {
-                    for (const key in phraseDict) {
-                        if (key !== state.pinyinBuffer && key.startsWith(state.pinyinBuffer)) {
-                            if (!matches.includes(phraseDict[key])) {
-                                matches.push(phraseDict[key]);
-                            }
-                            if (matches.length >= 10) break;
-                        }
+                if (phraseDict) {
+                    const phraseMatches = this.getPhraseCandidates(state.pinyinBuffer, phraseDict);
+                    for (const phrase of phraseMatches) {
+                        this.pushUnique(matches, seen, phrase, 24);
+                        if (matches.length >= 24) break;
                     }
                 }
 
-                // 3. 单字精确匹配
-                if (charDict[state.pinyinBuffer]) {
-                    for (const char of charDict[state.pinyinBuffer]) {
-                        if (!matches.includes(char)) {
-                            matches.push(char);
-                        }
-                        if (matches.length >= 50) break;
-                    }
+                const charMatches = this.getCharCandidates(state.pinyinBuffer, charDict);
+                for (const char of charMatches) {
+                    this.pushUnique(matches, seen, char, 50);
+                    if (matches.length >= 50) break;
                 }
 
-                // 4. 单字前缀匹配
-                if (matches.length < 50) {
-                    for (const key in charDict) {
-                        if (key !== state.pinyinBuffer && key.startsWith(state.pinyinBuffer)) {
-                            for (const char of charDict[key]) {
-                                if (!matches.includes(char)) {
-                                    matches.push(char);
-                                }
-                                if (matches.length >= 50) break;
-                            }
+                if (matches.length === 0 && phraseDict) {
+                    const legacy = phraseDict[state.pinyinBuffer];
+                    if (Array.isArray(legacy)) {
+                        for (const item of legacy) {
+                            this.pushUnique(matches, seen, item, 24);
                         }
-                        if (matches.length >= 50) break;
+                    } else if (typeof legacy === 'string') {
+                        this.pushUnique(matches, seen, legacy, 24);
                     }
                 }
 
                 if (matches.length === 0) {
                     matches = [state.pinyinBuffer];
                 }
+
+                if (state.candidateCache.size > 500) {
+                    state.candidateCache.clear();
+                }
+                state.candidateCache.set(cacheKey, matches);
             }
 
             state.lastCandidates = matches;

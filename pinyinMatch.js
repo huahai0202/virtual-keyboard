@@ -7,6 +7,31 @@
 })(typeof self !== 'undefined' ? self : this, function () {
     const VOWELS = new Set(['a', 'e', 'i', 'o', 'u', 'v']);
     const INITIAL_STARTS = new Set(['b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x', 'r', 'z', 'c', 's', 'y', 'w']);
+    const DICT_CACHE = new WeakMap();
+
+    function buildDictIndex(dict) {
+        const keys = Object.keys(dict);
+        const byFirst = {};
+        for (const key of keys) {
+            if (!key || typeof key !== 'string') continue;
+            const first = key[0];
+            if (!byFirst[first]) byFirst[first] = [];
+            byFirst[first].push(key);
+        }
+        return { keys, byFirst };
+    }
+
+    function getDictIndex(dict) {
+        if (!dict || typeof dict !== 'object') {
+            return { keys: [], byFirst: {} };
+        }
+        let cached = DICT_CACHE.get(dict);
+        if (!cached) {
+            cached = buildDictIndex(dict);
+            DICT_CACHE.set(dict, cached);
+        }
+        return cached;
+    }
 
     function hasVowelSoon(s, fromIndex) {
         const end = Math.min(s.length, fromIndex + 5);
@@ -69,7 +94,7 @@
         const opts = options && typeof options === 'object' ? options : {};
         const keyPriority = opts.keyPriority && typeof opts.keyPriority === 'object' ? opts.keyPriority : null;
 
-        const keys = Object.keys(dict);
+        const dictIndex = getDictIndex(dict);
         const rankedKeys = [];
 
         const bufferFirst = buffer[0];
@@ -84,10 +109,11 @@
             rankedKeys.push({ key: buffer, type: 0, score: 0, priority });
         }
 
+        const candidateKeys = dictIndex.byFirst[bufferFirst] || [];
+
         if (allowPrefix) {
-            for (const key of keys) {
+            for (const key of candidateKeys) {
                 if (key === buffer) continue;
-                if (key[0] !== bufferFirst) continue;
                 if (key.startsWith(buffer)) {
                     const priority = keyPriority && typeof keyPriority[key] === 'number' ? keyPriority[key] : 0;
                     rankedKeys.push({ key, type: 1, score: key.length, priority });
@@ -96,9 +122,8 @@
         }
 
         if (allowInitials) {
-            for (const key of keys) {
+            for (const key of candidateKeys) {
                 if (key === buffer) continue;
-                if (key[0] !== bufferFirst) continue;
                 if (key.startsWith(buffer)) continue;
 
                 const initials = getInitialism(key);
@@ -116,9 +141,8 @@
         }
 
         if (allowSubsequence) {
-            for (const key of keys) {
+            for (const key of candidateKeys) {
                 if (key === buffer) continue;
-                if (key[0] !== bufferFirst) continue;
                 if (key.startsWith(buffer)) continue;
 
                 const initials = getInitialism(key);

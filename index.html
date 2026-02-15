@@ -20,7 +20,7 @@
         ]).then(([charDict, phraseDict]) => {
             window.pinyinHanziDict = charDict;
             window.pinyinPhraseDict = phraseDict;
-            console.log('字典加载完成:', Object.keys(charDict).length, '个拼音,', Object.keys(phraseDict).length, '个词组');
+            console.log('字典加载完成:', Object.keys(charDict).length, '个拼音,', Object.keys(phraseDict).length, '个词组拼音');
         }).catch(err => {
             console.error('字典加载失败:', err);
         });
@@ -126,6 +126,7 @@
         </div>
     </div>
 
+    <script src="pinyinMatch.js"></script>
     <script src="script.js"></script>
 </body>
 
