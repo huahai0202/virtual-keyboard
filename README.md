@@ -68,8 +68,8 @@ python -m http.server 3000
 ├── style.css                        # 样式文件
 ├── script.js                        # 逻辑脚本
 ├── pinyinMatch.js                   # 拼音匹配模块
-├── no-tone-pinyin-hanzi-table.json  # 拼音单字字典
-├── pinyin-phrases.json              # 拼音词组字典 (400+)
+├── pinyin-char-dict.json            # 拼音单字字典
+├── pinyin-phrase-dict.json          # 拼音词组字典 (400+)
 └── README.md                        # 说明文档
 ```
 

@@ -92,7 +92,7 @@ def main():
         items = sorted(phrase_map.items(), key=lambda item: (-item[1], item[0]))[:TOPN_PER_KEY]
         phrase_dict[key] = [phrase for phrase, _ in items]
 
-    with open("pinyin-phrases.json", "w", encoding="utf-8") as f:
+    with open("pinyin-phrase-dict.json", "w", encoding="utf-8") as f:
         json.dump(phrase_dict, f, ensure_ascii=False, separators=(",", ":"))
 
     print(f"done: keys={len(phrase_dict)}")

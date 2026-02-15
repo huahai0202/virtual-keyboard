@@ -15,8 +15,8 @@
 
         // 并行加载两个字典
         Promise.all([
-            fetch('no-tone-pinyin-hanzi-table.json').then(res => res.json()),
-            fetch('pinyin-phrases.json').then(res => res.json())
+            fetch('pinyin-char-dict.json').then(res => res.json()),
+            fetch('pinyin-phrase-dict.json').then(res => res.json())
         ]).then(([charDict, phraseDict]) => {
             window.pinyinHanziDict = charDict;
             window.pinyinPhraseDict = phraseDict;
