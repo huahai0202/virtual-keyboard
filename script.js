@@ -206,19 +206,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 matches = ['字典加载中...'];
             } else {
                 const seen = new Set();
+                const hasExactCharKey = Object.prototype.hasOwnProperty.call(charDict, state.pinyinBuffer);
+                const charMatches = this.getCharCandidates(state.pinyinBuffer, charDict);
 
-                if (phraseDict) {
+                const pushChars = () => {
+                    for (const char of charMatches) {
+                        this.pushUnique(matches, seen, char, 50);
+                        if (matches.length >= 50) break;
+                    }
+                };
+
+                const pushPhrases = () => {
+                    if (!phraseDict) return;
                     const phraseMatches = this.getPhraseCandidates(state.pinyinBuffer, phraseDict);
                     for (const phrase of phraseMatches) {
-                        this.pushUnique(matches, seen, phrase, 24);
-                        if (matches.length >= 24) break;
+                        this.pushUnique(matches, seen, phrase, 50);
+                        if (matches.length >= 50) break;
                     }
-                }
+                };
 
-                const charMatches = this.getCharCandidates(state.pinyinBuffer, charDict);
-                for (const char of charMatches) {
-                    this.pushUnique(matches, seen, char, 50);
-                    if (matches.length >= 50) break;
+                if (hasExactCharKey) {
+                    pushChars();
+                    pushPhrases();
+                } else {
+                    pushPhrases();
+                    pushChars();
                 }
 
                 if (matches.length === 0 && phraseDict) {
