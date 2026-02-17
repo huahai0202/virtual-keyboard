@@ -96,51 +96,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const now = this.ctx.currentTime;
 
-            // 创建更好听的机械键盘音效
-            // 1. 主敲击音 - 清脆的高频
-            const osc1 = this.ctx.createOscillator();
-            const gain1 = this.ctx.createGain();
-            osc1.type = 'sine';
-            osc1.frequency.setValueAtTime(1800, now);
-            osc1.frequency.exponentialRampToValueAtTime(800, now + 0.02);
-            gain1.gain.setValueAtTime(0, now);
-            gain1.gain.linearRampToValueAtTime(0.15, now + 0.003);
-            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-            osc1.connect(gain1);
-            gain1.connect(this.ctx.destination);
-            osc1.start(now);
-            osc1.stop(now + 0.05);
+            // thock 风格：低频主体 + 柔和高频 + 短噪声
+            const lowOsc = this.ctx.createOscillator();
+            const lowGain = this.ctx.createGain();
+            lowOsc.type = 'triangle';
+            lowOsc.frequency.setValueAtTime(220, now);
+            lowOsc.frequency.exponentialRampToValueAtTime(150, now + 0.05);
+            lowGain.gain.setValueAtTime(0.001, now);
+            lowGain.gain.linearRampToValueAtTime(0.08, now + 0.004);
+            lowGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+            lowOsc.connect(lowGain);
+            lowGain.connect(this.ctx.destination);
+            lowOsc.start(now);
+            lowOsc.stop(now + 0.08);
 
-            // 2. 敲击底座音 - 低沉的震动
-            const osc2 = this.ctx.createOscillator();
-            const gain2 = this.ctx.createGain();
-            osc2.type = 'triangle';
-            osc2.frequency.setValueAtTime(150, now);
-            osc2.frequency.exponentialRampToValueAtTime(60, now + 0.04);
-            gain2.gain.setValueAtTime(0, now);
-            gain2.gain.linearRampToValueAtTime(0.08, now + 0.005);
-            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-            osc2.connect(gain2);
-            gain2.connect(this.ctx.destination);
-            osc2.start(now);
-            osc2.stop(now + 0.06);
+            const topOsc = this.ctx.createOscillator();
+            const topGain = this.ctx.createGain();
+            topOsc.type = 'sine';
+            topOsc.frequency.setValueAtTime(1100, now);
+            topOsc.frequency.exponentialRampToValueAtTime(750, now + 0.03);
+            topGain.gain.setValueAtTime(0.001, now);
+            topGain.gain.linearRampToValueAtTime(0.04, now + 0.002);
+            topGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+            topOsc.connect(topGain);
+            topGain.connect(this.ctx.destination);
+            topOsc.start(now);
+            topOsc.stop(now + 0.04);
 
-            // 3. 金属质感噪音
-            const bufferSize = this.ctx.sampleRate * 0.03;
+            const bufferSize = Math.floor(this.ctx.sampleRate * 0.02);
             const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
             const output = noiseBuffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) {
-                output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.1));
+                const env = Math.pow(1 - i / bufferSize, 2.4);
+                output[i] = (Math.random() * 2 - 1) * env;
             }
             const noise = this.ctx.createBufferSource();
-            const noiseGain = this.ctx.createGain();
             const noiseFilter = this.ctx.createBiquadFilter();
+            const noiseGain = this.ctx.createGain();
             noise.buffer = noiseBuffer;
-            noiseFilter.type = 'bandpass';
-            noiseFilter.frequency.value = 4000;
-            noiseFilter.Q.value = 2;
-            noiseGain.gain.setValueAtTime(0.04, now);
-            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+            noiseFilter.type = 'highpass';
+            noiseFilter.frequency.value = 1700;
+            noiseGain.gain.setValueAtTime(0.02, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
             noise.connect(noiseFilter);
             noiseFilter.connect(noiseGain);
             noiseGain.connect(this.ctx.destination);
