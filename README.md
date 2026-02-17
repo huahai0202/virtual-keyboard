@@ -12,18 +12,6 @@
 
 ## 截图预览
 
-### 默认界面
-
-![默认界面](docs/screenshots/keyboard-default.png)
-
-### 拼音候选输入
-
-![拼音候选输入](docs/screenshots/keyboard-pinyin.png)
-
-### 主题切换
-
-![主题切换](docs/screenshots/keyboard-theme.png)
-
 ### 五种主题展示
 
 | 默认赛博 | 亮色 |
