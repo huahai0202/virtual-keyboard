@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========== DOM 元素缓存 ==========
     const DOM = {
         keys: document.querySelectorAll('.key'),
+        inputDisplay: document.querySelector('.input-display'),
         outputDisplay: document.querySelector('.output-display'),
         capsLight: document.querySelector('.status-light[data-label="CAPS"]'),
         cnLight: document.querySelector('.status-light[data-label="CN"]'),
@@ -24,12 +25,40 @@ document.addEventListener('DOMContentLoaded', () => {
         capsLock: false,
         isChineseMode: false,
         pinyinBuffer: "",
+        inputBuffer: "",
+        committedBuffer: "",
         candidatePage: 0,
         lastCandidates: [],
         candidatePageSize: 8,
         soundEnabled: true,
         isAllSelected: false,
         candidateCache: new Map()
+    };
+
+    const INPUT_PLACEHOLDER = 'Type here...';
+    const OUTPUT_PLACEHOLDER = 'Committed text...';
+    const STORAGE_KEYS = {
+        theme: 'vk_theme',
+        soundEnabled: 'vk_sound_enabled'
+    };
+    const THEME_CLASSES = ['', 'light-theme', 'sakura-theme', 'forest-theme', 'ocean-theme'];
+    const THEME_ICONS = ['☀️', '🌸', '🌲', '🌊', '🌙'];
+
+    const StorageManager = {
+        get(key) {
+            try {
+                return window.localStorage.getItem(key);
+            } catch (error) {
+                return null;
+            }
+        },
+        set(key, value) {
+            try {
+                window.localStorage.setItem(key, value);
+            } catch (error) {
+                // ignore storage errors
+            }
+        }
     };
 
     // ========== 中文标点映射 ==========
@@ -130,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.candidatePage = 0;
             state.lastCandidates = [];
             this.updateCandidateBox();
+            UIManager.renderInput();
         },
 
         getPhraseCandidates(buffer, phraseDict) {
@@ -159,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.pinyinBuffer += char.toLowerCase();
             state.candidatePage = 0;
             this.updateCandidateBox();
+            UIManager.renderInput();
         },
 
         deleteChar() {
@@ -166,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.pinyinBuffer = state.pinyinBuffer.slice(0, -1);
                 state.candidatePage = 0;
                 this.updateCandidateBox();
+                UIManager.renderInput();
                 return true;
             }
             return false;
@@ -277,6 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
             displayMatches.forEach((char, index) => {
                 const el = document.createElement('span');
                 el.className = 'candidate-item' + (index === 0 ? ' active' : '');
+                el.dataset.value = char;
                 el.textContent = `${index + 1} ${char}`;
                 fragment.appendChild(el);
             });
@@ -295,8 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectCandidate(index) {
             const items = DOM.candidatesList.querySelectorAll('.candidate-item');
             if (items[index]) {
-                const text = items[index].textContent.split(' ')[1];
-                return text;
+                return items[index].dataset.value || null;
             }
             return null;
         },
@@ -322,34 +354,71 @@ document.addEventListener('DOMContentLoaded', () => {
             DOM.cnLight.classList.toggle('on', isOn);
         },
 
-        appendOutput(text) {
-            if (!text) return;
-            if (DOM.outputDisplay.textContent === 'Type something...') {
-                DOM.outputDisplay.textContent = '';
+        renderInput() {
+            const composing = state.pinyinBuffer;
+            const text = `${state.inputBuffer}${composing}`;
+            if (!text) {
+                DOM.inputDisplay.textContent = INPUT_PLACEHOLDER;
+                DOM.inputDisplay.classList.add('placeholder');
+                return;
             }
-            // 全选状态下输入新内容先清空
-            if (state.isAllSelected) {
-                DOM.outputDisplay.textContent = '';
-                state.isAllSelected = false;
-                DOM.outputDisplay.classList.remove('selected');
+            DOM.inputDisplay.textContent = text;
+            DOM.inputDisplay.classList.remove('placeholder');
+        },
+
+        renderOutput() {
+            if (!state.committedBuffer) {
+                DOM.outputDisplay.textContent = OUTPUT_PLACEHOLDER;
+                DOM.outputDisplay.classList.add('placeholder');
+                return;
             }
-            DOM.outputDisplay.textContent += text;
-            // 自动滚动到底部
+            DOM.outputDisplay.textContent = state.committedBuffer;
+            DOM.outputDisplay.classList.remove('placeholder');
             DOM.outputDisplay.scrollTop = DOM.outputDisplay.scrollHeight;
         },
 
-        deleteLastChar() {
+        appendInput(text) {
+            if (!text) return;
+            state.inputBuffer += text;
+            this.clearSelection();
+            this.renderInput();
+        },
+
+        clearInput() {
+            state.inputBuffer = '';
+            this.renderInput();
+        },
+
+        appendOutput(text) {
+            if (!text) return;
             if (state.isAllSelected) {
-                // 全选状态下删除全部
-                DOM.outputDisplay.textContent = '';
+                state.committedBuffer = '';
                 state.isAllSelected = false;
                 DOM.outputDisplay.classList.remove('selected');
-            } else {
-                DOM.outputDisplay.textContent = DOM.outputDisplay.textContent.slice(0, -1);
             }
+            state.committedBuffer += text;
+            this.renderOutput();
+        },
+
+        deleteLastInputChar() {
+            if (!state.inputBuffer) return;
+            state.inputBuffer = state.inputBuffer.slice(0, -1);
+            this.renderInput();
+        },
+
+        deleteLastCommittedChar() {
+            if (state.isAllSelected) {
+                state.committedBuffer = '';
+                state.isAllSelected = false;
+                DOM.outputDisplay.classList.remove('selected');
+            } else if (state.committedBuffer) {
+                state.committedBuffer = state.committedBuffer.slice(0, -1);
+            }
+            this.renderOutput();
         },
 
         selectAll() {
+            if (!state.committedBuffer) return;
             state.isAllSelected = true;
             DOM.outputDisplay.classList.add('selected');
         },
@@ -359,41 +428,65 @@ document.addEventListener('DOMContentLoaded', () => {
             DOM.outputDisplay.classList.remove('selected');
         },
 
-        toggleTheme() {
-            // 主题列表: 默认赛博 → 亮色 → 樱花粉 → 森林绿 → 海洋蓝 → 默认
-            const themes = ['', 'light-theme', 'sakura-theme', 'forest-theme', 'ocean-theme'];
-            const icons = ['☀️', '🌸', '🌲', '🌊', '🌙'];
-
-            // 查找当前主题
-            let currentIndex = 0;
-            for (let i = 0; i < themes.length; i++) {
-                if (themes[i] && document.body.classList.contains(themes[i])) {
-                    currentIndex = i;
-                    break;
+        getCurrentThemeIndex() {
+            for (let i = 0; i < THEME_CLASSES.length; i++) {
+                if (THEME_CLASSES[i] && document.body.classList.contains(THEME_CLASSES[i])) {
+                    return i;
                 }
             }
+            return 0;
+        },
 
-            // 移除所有主题类
-            themes.forEach(t => t && document.body.classList.remove(t));
-
-            // 切换到下一个主题
-            const nextIndex = (currentIndex + 1) % themes.length;
-            if (themes[nextIndex]) {
-                document.body.classList.add(themes[nextIndex]);
+        applyThemeByIndex(index, persist = false) {
+            const safeIndex = Math.max(0, Math.min(index, THEME_CLASSES.length - 1));
+            THEME_CLASSES.forEach(theme => theme && document.body.classList.remove(theme));
+            if (THEME_CLASSES[safeIndex]) {
+                document.body.classList.add(THEME_CLASSES[safeIndex]);
             }
-
-            // 更新按钮图标
             if (DOM.themeToggle) {
-                DOM.themeToggle.textContent = icons[nextIndex];
+                DOM.themeToggle.textContent = THEME_ICONS[safeIndex];
+            }
+            if (persist) {
+                StorageManager.set(STORAGE_KEYS.theme, String(safeIndex));
+            }
+        },
+
+        toggleTheme() {
+            const nextIndex = (this.getCurrentThemeIndex() + 1) % THEME_CLASSES.length;
+            this.applyThemeByIndex(nextIndex, true);
+        },
+
+        applySoundState(persist = false) {
+            if (DOM.soundToggle) {
+                DOM.soundToggle.textContent = state.soundEnabled ? '🔊' : '🔇';
+                DOM.soundToggle.classList.toggle('off', !state.soundEnabled);
+            }
+            if (persist) {
+                StorageManager.set(STORAGE_KEYS.soundEnabled, state.soundEnabled ? '1' : '0');
             }
         },
 
         toggleSound() {
             state.soundEnabled = !state.soundEnabled;
-            if (DOM.soundToggle) {
-                DOM.soundToggle.textContent = state.soundEnabled ? '🔊' : '🔇';
-                DOM.soundToggle.classList.toggle('off', !state.soundEnabled);
+            this.applySoundState(true);
+        },
+
+        restorePreferences() {
+            const themeIndexRaw = StorageManager.get(STORAGE_KEYS.theme);
+            const themeIndex = Number.parseInt(themeIndexRaw || '0', 10);
+            if (Number.isInteger(themeIndex) && themeIndex >= 0 && themeIndex < THEME_CLASSES.length) {
+                this.applyThemeByIndex(themeIndex, false);
+            } else {
+                this.applyThemeByIndex(0, false);
             }
+
+            const soundRaw = StorageManager.get(STORAGE_KEYS.soundEnabled);
+            if (soundRaw === '0') {
+                state.soundEnabled = false;
+            } else if (soundRaw === '1') {
+                state.soundEnabled = true;
+            }
+            this.applySoundState(false);
         },
 
         showCopyFeedback() {
@@ -429,25 +522,30 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         handleInput(keyVal, isPhysical = false) {
-            // 清除占位符
-            if (DOM.outputDisplay.textContent === 'Type something...') {
-                DOM.outputDisplay.textContent = '';
-            }
-
             // Backspace
             if (keyVal === 'Backspace') {
                 if (state.isChineseMode && ChineseInput.deleteChar()) {
                     return;
                 }
-                UIManager.deleteLastChar();
+                if (state.inputBuffer) {
+                    UIManager.deleteLastInputChar();
+                    return;
+                }
+                UIManager.deleteLastCommittedChar();
                 return;
             }
 
             // Enter
             if (keyVal === 'Enter') {
                 if (state.isChineseMode && state.pinyinBuffer) {
-                    UIManager.appendOutput(state.pinyinBuffer);
+                    const text = ChineseInput.getFirstCandidate() || state.pinyinBuffer;
+                    UIManager.appendOutput(text);
                     ChineseInput.reset();
+                    return;
+                }
+                if (state.inputBuffer) {
+                    UIManager.appendOutput(state.inputBuffer);
+                    UIManager.clearInput();
                     return;
                 }
                 UIManager.appendOutput('\n');
@@ -462,13 +560,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     ChineseInput.reset();
                     return;
                 }
-                UIManager.appendOutput(' ');
+                UIManager.appendInput(' ');
                 return;
             }
 
             // Tab
             if (keyVal === 'Tab') {
-                UIManager.appendOutput('    ');
+                UIManager.appendInput('    ');
                 return;
             }
 
@@ -527,13 +625,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 普通字符输入
                 const char = isPhysical ? keyVal : (state.capsLock ? keyVal.toUpperCase() : keyVal.toLowerCase());
-                UIManager.appendOutput(char);
+                UIManager.appendInput(char);
             }
         },
 
         bindMouseEvents() {
             DOM.keys.forEach(key => {
-                key.addEventListener('mousedown', () => {
+                key.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
                     AudioManager.playClick();
                     UIManager.createRipple(key);
 
@@ -561,8 +660,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Ctrl+C 复制
                 if (e.ctrlKey && e.key === 'c') {
                     e.preventDefault();
-                    const text = DOM.outputDisplay.textContent;
-                    if (text && text !== 'Type something...') {
+                    const text = state.committedBuffer;
+                    if (text) {
                         navigator.clipboard.writeText(text).then(() => {
                             UIManager.showCopyFeedback();
                         });
@@ -575,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.preventDefault();
                     navigator.clipboard.readText().then(text => {
                         if (text) {
-                            UIManager.appendOutput(text);
+                            UIManager.appendInput(text);
                         }
                     });
                     return;
@@ -612,7 +711,8 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         bindCandidateEvents() {
-            DOM.candidatesList.addEventListener('mousedown', (e) => {
+            DOM.candidatesList.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
                 const target = e.target;
                 if (!(target instanceof HTMLElement)) return;
 
@@ -624,7 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (target.classList.contains('candidate-item')) {
-                    const text = target.textContent.split(' ').slice(1).join(' ');
+                    const text = target.dataset.value || '';
                     AudioManager.playClick();
                     UIManager.appendOutput(text);
                     ChineseInput.reset();
@@ -634,15 +734,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         bindSettingsButtons() {
             if (DOM.themeToggle) {
-                DOM.themeToggle.addEventListener('click', UIManager.toggleTheme);
+                DOM.themeToggle.addEventListener('click', () => UIManager.toggleTheme());
             }
             if (DOM.soundToggle) {
-                DOM.soundToggle.addEventListener('click', UIManager.toggleSound);
+                DOM.soundToggle.addEventListener('click', () => UIManager.toggleSound());
             }
         }
     };
 
     // ========== 初始化 ==========
+    UIManager.renderInput();
+    UIManager.renderOutput();
+    UIManager.restorePreferences();
     AudioManager.init();
     KeyboardController.init();
 });
