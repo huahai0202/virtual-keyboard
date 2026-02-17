@@ -24,6 +24,16 @@
 
 ![主题切换](docs/screenshots/keyboard-theme.png)
 
+### 五种主题展示
+
+| 默认赛博 | 亮色 |
+|:---:|:---:|
+| ![默认赛博主题](screenshots/default-theme.png) | ![亮色主题](screenshots/light-theme.png) |
+
+| 樱花粉 | 森林绿 | 海洋蓝 |
+|:---:|:---:|:---:|
+| ![樱花粉主题](screenshots/sakura-theme.png) | ![森林绿主题](screenshots/forest-theme.png) | ![海洋蓝主题](screenshots/ocean-theme.png) |
+
 ## 核心功能
 
 - 中英文模式切换：按 `Shift`（单独点击）切换，`CN` 指示灯同步显示
